@@ -1,0 +1,70 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #fafafa;
+  color: #1a1a2e;
+  overflow-x: hidden;
+}
+
+.App {
+  width: 100vw;
+  min-height: 100vh;
+}
+
+/* PlanPage specific - fixed layout */
+.plan-page {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Other pages - allow scrolling */
+.welcome-page,
+.discover-page,
+.explore-page {
+  min-height: 100vh;
+  height: auto;
+  overflow-y: auto;
+}
+
+/* Mapbox popup customization */
+.mapboxgl-popup-content {
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 20px;
+  padding: 4px 8px;
+  color: #6b7280;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

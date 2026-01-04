@@ -1,0 +1,270 @@
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import Map, { Source, Layer, Marker, Popup } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { generateCrimeHeatmapData } from '../data/crimeData';
+import { generateHeatHeatmapData } from '../data/heatData';
+import { sampleItinerary } from '../data/sampleItinerary';
+import { generatePopupHTML, fitMapToCoordinates } from '../utils/mapUtils';
+import LayerControl from './LayerControl';
+import MapLegend from './MapLegend';
+import ItineraryPanel from './ItineraryPanel';
+
+// Note: Replace with your actual Mapbox token
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example';
+
+// Los Angeles center coordinates
+const LA_CENTER = {
+  longitude: -118.2437,
+  latitude: 34.0522,
+  zoom: 10
+};
+
+/**
+ * InteractiveMap - Main map component with layer switching and itinerary display
+ */
+const InteractiveMap = () => {
+  const mapRef = useRef(null);
+  const [viewState, setViewState] = useState(LA_CENTER);
+  const [activeLayer, setActiveLayer] = useState('none');
+  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [itinerary] = useState(sampleItinerary);
+
+  // Heatmap data
+  const crimeHeatmap = generateCrimeHeatmapData();
+  const heatHeatmap = generateHeatHeatmapData();
+
+  // Crime heatmap layer configuration
+  const crimeHeatmapLayer = {
+    id: 'crime-heatmap',
+    type: 'heatmap',
+    paint: {
+      // Increase intensity as zoom level increases
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 3],
+      // Color ramp for heatmap
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0, 'rgba(16, 185, 129, 0)',      // Green (safe) - transparent
+        0.2, 'rgba(16, 185, 129, 0.4)',  // Green (safe)
+        0.4, 'rgba(251, 191, 36, 0.6)',  // Yellow (moderate)
+        0.6, 'rgba(239, 68, 68, 0.7)',   // Red (unsafe)
+        0.8, 'rgba(127, 29, 29, 0.8)',   // Dark red (very unsafe)
+        1, 'rgba(127, 29, 29, 0.9)'
+      ],
+      // Adjust radius based on zoom level
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 9, 20],
+      // Transition from heatmap to circle layer by zoom level
+      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 7, 1, 13, 0.5]
+    }
+  };
+
+  // Heat exposure heatmap layer configuration
+  const heatExposureLayer = {
+    id: 'heat-heatmap',
+    type: 'heatmap',
+    paint: {
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 3],
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0, 'rgba(96, 165, 250, 0)',      // Blue (cool) - transparent
+        0.2, 'rgba(96, 165, 250, 0.4)',  // Blue (cool)
+        0.4, 'rgba(251, 191, 36, 0.6)',  // Yellow (warm)
+        0.6, 'rgba(249, 115, 22, 0.7)',  // Orange (hot)
+        0.8, 'rgba(220, 38, 38, 0.8)',   // Red (very hot)
+        1, 'rgba(220, 38, 38, 0.9)'
+      ],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 9, 20],
+      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 7, 1, 13, 0.5]
+    }
+  };
+
+  // Route line layer
+  const routeLayer = {
+    id: 'route',
+    type: 'line',
+    paint: {
+      'line-color': '#3b82f6',
+      'line-width': 4,
+      'line-opacity': 0.8
+    }
+  };
+
+  // Fit map to show all destinations on initial load
+  useEffect(() => {
+    if (mapRef.current && itinerary) {
+      const coordinates = itinerary.destinations.map(d => [
+        d.location.lng,
+        d.location.lat
+      ]);
+      
+      // Small delay to ensure map is fully loaded
+      setTimeout(() => {
+        fitMapToCoordinates(mapRef.current, coordinates, 80);
+      }, 500);
+    }
+  }, [itinerary]);
+
+  const handleLayerChange = useCallback((layerId) => {
+    setActiveLayer(layerId);
+  }, []);
+
+  const handleDestinationClick = useCallback((destination) => {
+    setSelectedDestination(destination);
+    
+    // Fly to destination
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [destination.location.lng, destination.location.lat],
+        zoom: 14,
+        duration: 1500
+      });
+    }
+  }, []);
+
+  const handleMarkerClick = useCallback((destination) => {
+    setSelectedDestination(destination);
+  }, []);
+
+  return (
+    <div style={styles.container}>
+      <Map
+        ref={mapRef}
+        {...viewState}
+        onMove={evt => setViewState(evt.viewState)}
+        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapboxAccessToken={MAPBOX_TOKEN}
+        style={styles.map}
+      >
+        {/* Crime heatmap layer */}
+        {activeLayer === 'crime' && (
+          <Source
+            id="crime-data"
+            type="geojson"
+            data={{
+              type: 'FeatureCollection',
+              features: crimeHeatmap.map(([lng, lat, weight]) => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lng, lat] },
+                properties: { weight }
+              }))
+            }}
+          >
+            <Layer {...crimeHeatmapLayer} />
+          </Source>
+        )}
+
+        {/* Heat exposure heatmap layer */}
+        {activeLayer === 'heat' && (
+          <Source
+            id="heat-data"
+            type="geojson"
+            data={{
+              type: 'FeatureCollection',
+              features: heatHeatmap.map(([lng, lat, weight]) => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lng, lat] },
+                properties: { weight }
+              }))
+            }}
+          >
+            <Layer {...heatExposureLayer} />
+          </Source>
+        )}
+
+        {/* Route line */}
+        {itinerary && itinerary.route && (
+          <Source
+            id="route"
+            type="geojson"
+            data={itinerary.route}
+          >
+            <Layer {...routeLayer} />
+          </Source>
+        )}
+
+        {/* Destination markers */}
+        {itinerary && itinerary.destinations.map((dest, index) => (
+          <Marker
+            key={dest.id}
+            longitude={dest.location.lng}
+            latitude={dest.location.lat}
+            anchor="bottom"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              handleMarkerClick(dest);
+            }}
+          >
+            <div style={styles.marker}>
+              <div style={styles.markerNumber}>{index + 1}</div>
+            </div>
+          </Marker>
+        ))}
+
+        {/* Popup for selected destination */}
+        {selectedDestination && (
+          <Popup
+            longitude={selectedDestination.location.lng}
+            latitude={selectedDestination.location.lat}
+            anchor="bottom"
+            onClose={() => setSelectedDestination(null)}
+            closeOnClick={false}
+          >
+            <div dangerouslySetInnerHTML={{ 
+              __html: generatePopupHTML(selectedDestination) 
+            }} />
+          </Popup>
+        )}
+      </Map>
+
+      {/* UI Controls */}
+      <LayerControl activeLayer={activeLayer} onLayerChange={handleLayerChange} />
+      
+      {activeLayer !== 'none' && (
+        <MapLegend activeLayer={activeLayer} />
+      )}
+      
+      <ItineraryPanel 
+        itinerary={itinerary} 
+        onDestinationClick={handleDestinationClick}
+      />
+    </div>
+  );
+};
+
+const styles = {
+  container: {
+    width: '100vw',
+    height: '100vh',
+    position: 'relative'
+  },
+  map: {
+    width: '100%',
+    height: '100%'
+  },
+  marker: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: '#3b82f6',
+    border: '3px solid white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+    transition: 'transform 0.2s',
+    ':hover': {
+      transform: 'scale(1.1)'
+    }
+  },
+  markerNumber: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: '16px'
+  }
+};
+
+export default InteractiveMap;
