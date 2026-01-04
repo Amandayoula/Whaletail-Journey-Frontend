@@ -2,7 +2,7 @@
 
 An interactive, safety-aware travel planning map built with React and Mapbox GL. This application visualizes crime safety data and heat exposure information for Los Angeles, allowing users to plan optimized travel routes with real-time layer switching.
 
-![Whaletail Map](docs/screenshot.png)
+<!-- ![Whaletail Map](docs/screenshot.png) -->
 
 ## 🌟 Features
 
@@ -88,7 +88,7 @@ whaletail-map-frontend/
    
    Edit `.env` and add your Mapbox token:
    ```
-   VITE_MAPBOX_TOKEN=pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJ5b3VyLXRva2VuIn0.xxx
+   VITE_MAPBOX_TOKEN=pk.xxx.xxx
    VITE_API_BASE_URL=http://localhost:8000
    ```
 
@@ -189,60 +189,6 @@ const myCustomLayer = {
   }
 };
 ```
-
-### Styling
-- Edit `src/App.css` for global styles
-- Component styles are inline in JSX (can be extracted to CSS modules)
-- Mapbox popup styling in `.mapboxgl-popup-content`
-
-## 🧪 Development
-
-### Available Scripts
-```bash
-npm run dev       # Start dev server with hot reload
-npm run build     # Production build
-npm run preview   # Preview production build
-npm run lint      # Run ESLint
-```
-
-### Code Quality
-- ESLint configured for React best practices
-- Vite for fast builds and HMR
-- Component-based architecture for maintainability
-
-## 📝 Roadmap
-
-- [ ] User authentication and saved itineraries
-- [ ] Real-time crime data integration
-- [ ] Multi-city support beyond Los Angeles
-- [ ] Constraint editing UI (must-visit, time windows)
-- [ ] Route optimization with multiple algorithms
-- [ ] Export itinerary to calendar/PDF
-- [ ] Mobile responsive design
-- [ ] Dark mode support
-- [ ] Accessibility improvements (WCAG 2.1)
-
-## 🤝 Contributing
-
-This project is part of Xiaoyu's portfolio for data science and ML engineering roles. Feedback and suggestions are welcome!
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- Mapbox GL JS for mapping capabilities
-- React Map GL for React integration
-- Turf.js for geospatial calculations
-- Anthropic Claude for development assistance
-
-## 📧 Contact
-
-For questions or opportunities:
-- Portfolio: [Your portfolio URL]
-- GitHub: [Your GitHub profile]
-- LinkedIn: [Your LinkedIn profile]
 
 ---
 
